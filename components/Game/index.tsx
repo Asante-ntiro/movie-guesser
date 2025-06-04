@@ -1,4 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+const Confetti = dynamic(() => import('react-confetti'), {
+  ssr: false
+});
 
 interface Movie {
   emojis: string;
@@ -25,8 +30,15 @@ const Game: React.FC = () => {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [currentPuzzle, setCurrentPuzzle] = useState<Movie | null>(null);
   const [guess, setGuess] = useState('');
-  const [feedback, setFeedback] = useState('Click "New Puzzle" to start!');
+  const [feedback, setFeedback] = useState('Guess the movie from the emojis!');
   const [isGameActive, setIsGameActive] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [correctAnimation, setCorrectAnimation] = useState(false);
+
+  // Start a new puzzle when component mounts
+  useEffect(() => {
+    startNewPuzzle();
+  }, []);
 
   const startNewPuzzle = useCallback(() => {
     const randomIndex = Math.floor(Math.random() * movies.length);
@@ -51,6 +63,14 @@ const Game: React.FC = () => {
       normalizedGuess.replace(/[^a-z0-9]/g, '') === normalizedAnswer.replace(/[^a-z0-9]/g, '')
     ) {
       setFeedback(`🎉 Correct! It was "${currentPuzzle.answer}"`);
+      setShowConfetti(true);
+      setCorrectAnimation(true);
+      // Load next puzzle after a short delay
+      setTimeout(() => {
+        setShowConfetti(false);
+        setCorrectAnimation(false);
+        startNewPuzzle();
+      }, 2000);
       setScore(prev => prev + (hintsUsed === 0 ? 10 : 5));
       setStreak(prev => prev + 1);
       setIsGameActive(false);
@@ -71,22 +91,53 @@ const Game: React.FC = () => {
     if (currentPuzzle) {
       setFeedback(`⏭️ The answer was: "${currentPuzzle.answer}"`);
       setStreak(0);
-      setIsGameActive(false);
+      // Load next puzzle after a short delay
+      setTimeout(() => {
+        startNewPuzzle();
+      }, 1500);
     }
   }, [currentPuzzle]);
 
   return (
     <div className="game-container">
-      <h1 className="text-center">🔍 Emoji Story Decoder</h1>
-      <p className="subtitle text-center">Can you decode the emoji story?</p>
-
-      <div className="score-display">
-        <div className="score-item">Score: {score}</div>
-        <div className="score-item">Streak: {streak}</div>
+      {showConfetti && (
+        <Confetti
+          width={window.innerWidth}
+          height={window.innerHeight}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.3}
+        />
+      )}
+      <div className="text-center space-y-4 mb-8">
+        <h1 className="flex items-center justify-center gap-3 text-4xl font-bold bg-white/50 backdrop-blur-sm rounded-lg p-4 inline-flex mx-auto text-gray-800">
+          <span className="text-4xl">🔍</span>
+          Emoji Story Decoder
+        </h1>
+        <p className="subtitle text-lg text-gray-600 font-medium bg-white/30 backdrop-blur-sm rounded-lg p-3 inline-block">
+          Can you decode the emoji story?
+        </p>
       </div>
 
-      <div className="emoji-display">
-        {currentPuzzle ? currentPuzzle.emojis : 'Click "New Puzzle" to start!'}
+      <div className="score-display bg-white/50 backdrop-blur-sm rounded-lg p-4">
+        <div className="score-item flex items-center gap-2">
+          <span className="text-2xl">🏆</span>
+          <div>
+            <div className="text-sm text-gray-600">Score</div>
+            <div className="font-bold text-xl">{score}</div>
+          </div>
+        </div>
+        <div className="score-item flex items-center gap-2">
+          <span className="text-2xl">🔥</span>
+          <div>
+            <div className="text-sm text-gray-600">Streak</div>
+            <div className="font-bold text-xl">{streak}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`emoji-display ${correctAnimation ? 'emoji-correct' : ''}`}>
+        {currentPuzzle ? currentPuzzle.emojis : 'Get ready to guess!'}
       </div>
 
       <div className="input-section">
@@ -98,6 +149,13 @@ const Game: React.FC = () => {
           disabled={!isGameActive}
           className="guess-input"
         />
+        <button
+          onClick={checkAnswer}
+          disabled={!isGameActive}
+          className="game-button"
+        >
+          Submit
+        </button>
       </div>
 
       <div className="feedback-section">
@@ -105,20 +163,15 @@ const Game: React.FC = () => {
       </div>
 
       <div className="button-group">
-        <button
-          onClick={startNewPuzzle}
-          disabled={isGameActive}
-          className="game-button"
-        >
-          New Puzzle
-        </button>
-        <button
-          onClick={checkAnswer}
-          disabled={!isGameActive}
-          className="game-button"
-        >
-          Submit Guess
-        </button>
+        {!isGameActive && !currentPuzzle && (
+          <button
+            onClick={startNewPuzzle}
+            className="game-button"
+          >
+            Start Game
+          </button>
+        )}
+
         <button
           onClick={showHint}
           disabled={!isGameActive}
