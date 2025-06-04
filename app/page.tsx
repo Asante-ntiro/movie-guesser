@@ -10,8 +10,8 @@ const frame = {
   button: {
     title: "Launch App",
     action: {
-      type: "launch_frame",
-      name: "Mini-app Starter",
+      type: "launch_miniapp",
+      name: "Movie Guesser",
       url: appUrl,
       splashImageUrl: `${appUrl}/images/splash.png`,
       splashBackgroundColor: "#ffffff",
@@ -21,10 +21,10 @@ const frame = {
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Mini-app Starter",
+    title: "Movie Guesser",
     openGraph: {
-      title: "Mini-app Starter",
-      description: "A starter for Farcastermini-apps",
+      title: "Movie Guesser",
+      description: "Guess the movie!",
     },
     other: {
       "fc:frame": JSON.stringify(frame),
