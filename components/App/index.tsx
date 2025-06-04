@@ -2,11 +2,11 @@
 
 import dynamic from "next/dynamic";
 
-const Home = dynamic(() => import("@/components/Home"), {
+const Game = dynamic(() => import("@/components/Game"), {
   ssr: false,
   loading: () => <div>Loading...</div>,
 });
 
 export default function App() {
-  return <Home />;
+  return <Game />;
 }
